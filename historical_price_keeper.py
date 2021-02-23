@@ -90,11 +90,11 @@ class HistoricalPriceKeeper:
 
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("date", int)
-        df.add_col("open", float, none=False)
-        df.add_col("high", float, none=False)
-        df.add_col("low", float, none=False)
-        df.add_col("close", float, none=False)
-        df.add_col("adjclose", float, none=False)
+        df.add_col("open", float, none_value=False)
+        df.add_col("high", float, none_value=False)
+        df.add_col("low", float, none_value=False)
+        df.add_col("close", float, none_value=False)
+        df.add_col("adjclose", float, none_value=False)
         df.add_col("volume", int)
         return df
 

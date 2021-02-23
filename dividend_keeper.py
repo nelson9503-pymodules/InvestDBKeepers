@@ -74,7 +74,7 @@ class DividendKeeper:
 
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("date", int)
-        df.add_col("dividend", float, none=False)
+        df.add_col("dividend", float, none_value=False)
         return df
 
     def __get_master_dataframe_temple(self) -> Dataframe:
