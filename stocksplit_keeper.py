@@ -63,9 +63,10 @@ class StockSplitKeeper:
         tb = self.db.TB(symbol)
         data = tb.query("date")
         dates = list(data.keys())
-        self.mastertb[symbol]["first_date"] = min(dates)
-        self.mastertb[symbol]["last_date"] = max(dates)
-        self.mastertb[symbol]["data_points"] = len(dates)
+        if len(dates) > 0:
+            self.mastertb[symbol]["first_date"] = min(dates)
+            self.mastertb[symbol]["last_date"] = max(dates)
+            self.mastertb[symbol]["data_points"] = len(dates)
         self.master.update(self.mastertb)
 
     def __get_today_timestamp(self) -> int:
