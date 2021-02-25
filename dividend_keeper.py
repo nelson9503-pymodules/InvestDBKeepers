@@ -1,6 +1,6 @@
 from .lightdf import Dataframe
 from . import mysqlite
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class DividendKeeper:
@@ -40,7 +40,8 @@ class DividendKeeper:
             if date < last_date:  # skip for row has been updated
                 continue
             try:
-                update_df.from_dict({date: data[date]})
+                process_date = self.__process_timestamp(date)
+                update_df.from_dict({process_date: data[date]})
             except ValueError:  # skip for none values
                 pass
         # update database
@@ -71,6 +72,17 @@ class DividendKeeper:
         now = datetime.now()
         now = datetime(now.year, now.month, now.day)
         return int(now.timestamp())
+
+    def __process_timestamp(self, timestamp: int) -> int:
+        d0 = datetime.fromtimestamp(0)
+        # analysis timestamp
+        delta = timedelta(seconds=timestamp)
+        d = d0 + delta
+        d = datetime(d.year, d.month, d.day)
+        # generate timestamp
+        delta = d - d0
+        timestamp = delta.days * 86400 + delta.seconds
+        return int(timestamp)
 
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("date", int)

@@ -1,6 +1,6 @@
 from .lightdf import Dataframe
 from . import mysqlite
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 
 
@@ -50,13 +50,14 @@ class HistoricalPriceKeeper:
             self.__setup_table(symbol)
         # update data
         update_df = self.__get_dataframe_temple()
-        last_date = self.mastertb[symbol]["last_date"]
+        last_date = self.mastertb[symbol]["last_date"] - (86400 * 20)
         for date in data:
-            if date < last_date: # skip for row has been updated
+            if date < last_date:  # skip for row has been updated
                 continue
             try:
-                update_df.from_dict({date: data[date]})
-            except ValueError: # skip for none values
+                process_date = self.__process_timestamp(date)
+                update_df.from_dict({process_date: data[date]})
+            except ValueError:  # skip for none values
                 pass
         # update database
         updates = update_df.to_dict()
@@ -64,14 +65,13 @@ class HistoricalPriceKeeper:
         self.__update_last_update(symbol)
         self.__update_first_last_date_and_data_points(symbol)
         self.db.commit()
-        
 
     def __update_last_update(self, symbol: str):
         today = self.__get_today_timestamp()
         if not symbol in self.mastertb:
             self.mastertb[symbol] = {}
         self.mastertb[symbol]["last_update"] = today
-        self.master.update(self.mastertb)            
+        self.master.update(self.mastertb)
 
     def __update_first_last_date_and_data_points(self, symbol: str):
         tb = self.db.TB(symbol)
@@ -87,6 +87,17 @@ class HistoricalPriceKeeper:
         now = datetime.now()
         now = datetime(now.year, now.month, now.day)
         return int(now.timestamp())
+
+    def __process_timestamp(self, timestamp: int) -> int:
+        d0 = datetime.fromtimestamp(0)
+        # analysis timestamp
+        delta = timedelta(seconds=timestamp)
+        d = d0 + delta
+        d = datetime(d.year, d.month, d.day)
+        # generate timestamp
+        delta = d - d0
+        timestamp = delta.days * 86400 + delta.seconds
+        return int(timestamp)
 
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("date", int)
@@ -105,7 +116,7 @@ class HistoricalPriceKeeper:
         df.add_col("last_date", int)
         df.add_col("data_points", int)
         return df
-    
+
     def __setup_table(self, symbol: str):
         tb = self.db.create_tb(symbol, "date", "INT")
         tb.add_col("open", "FLOAT")
@@ -143,7 +154,7 @@ class HistoricalPriceKeeper:
             if not symbol in self.mastertb:
                 return False
         return True
-    
+
     def __check_adjclose_change_randomly(self, symbol: str, data: dict):
         dates = list(data.keys())
         # choose 20 dates for checking randomly
@@ -156,7 +167,7 @@ class HistoricalPriceKeeper:
         tb = self.db.TB(symbol)
         for date in samples:
             query = tb.query("*", "WHERE date == {}".format(date))
-            if len(query) == 0: # skip if no record
+            if len(query) == 0:  # skip if no record
                 continue
             if not round(query[date]["adjclose"], 4) == round(data[date]["adjclose"], 4):
                 return False

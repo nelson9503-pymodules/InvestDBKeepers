@@ -1,6 +1,6 @@
 from .lightdf import Dataframe
 from . import mysqlite
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class TrendTableKeeper:
@@ -28,13 +28,13 @@ class TrendTableKeeper:
         df = self.__get_dataframe_temple()
         df.from_dict(query)
         return df
-    
+
     def query_master(self) -> Dataframe:
         tb = self.master.query()
         df = self.__get_master_dataframe_temple()
         df.from_dict(tb)
         return df
-    
+
     def update(self, symbol: str, data: dict):
         # check table exists
         exist = self.__check_table_exists(symbol)
@@ -46,14 +46,15 @@ class TrendTableKeeper:
         update_df = self.__get_dataframe_temple()
         last_date = self.mastertb[symbol]["last_date"]
         for date in data:
-            if date < last_date: # skip for row has been updated
+            if date < last_date:  # skip for row has been updated
                 continue
             try:
+                process_date = self.__process_timestamp(date)
                 update = data[date]
                 for col in update:
                     update[col] = round(update[col], 4)
-                update_df.from_dict({date: update})
-            except ValueError: # skip for none values
+                update_df.from_dict({process_date: update})
+            except ValueError:  # skip for none values
                 pass
         # update database
         updates = update_df.to_dict()
@@ -83,6 +84,17 @@ class TrendTableKeeper:
         now = datetime.now()
         now = datetime(now.year, now.month, now.day)
         return int(now.timestamp())
+
+    def __process_timestamp(self, timestamp: int) -> int:
+        d0 = datetime.fromtimestamp(0)
+        # analysis timestamp
+        delta = timedelta(seconds=timestamp)
+        d = d0 + delta
+        d = datetime(d.year, d.month, d.day)
+        # generate timestamp
+        delta = d - d0
+        timestamp = delta.days * 86400 + delta.seconds
+        return int(timestamp)
 
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("date", int)
