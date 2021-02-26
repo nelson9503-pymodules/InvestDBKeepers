@@ -1,13 +1,13 @@
 from .lightdf import Dataframe
-from . import mysqlite
+from . import mysql
 from datetime import datetime, timedelta
 
 
 class TrendTableKeeper:
 
     def __init__(self, db_folder_path: str):
-        self.db_path = db_folder_path + "/trendtable.db"
-        self.db = mysqlite.DB(self.db_path)
+        self.db_name = "trendtable.db"
+        self.db = mysql.DB(self.db_name)
         self.__setup_master_table()
 
     def query(self, symbol: str,  start_timestamp: int = None, end_timestamp: int = None) -> Dataframe:
@@ -111,7 +111,7 @@ class TrendTableKeeper:
         return df
 
     def __setup_table(self, symbol: str):
-        tb = self.db.create_tb(symbol, "date", "INT")
+        tb = self.db.add_tb(symbol, "date", "INT")
         for i in range(3, 378+1, 3):
             tb.add_col("tb"+str(i), "FLOAT")
         self.master.update({
@@ -126,7 +126,7 @@ class TrendTableKeeper:
 
     def __setup_master_table(self):
         if not "master" in self.db.list_tb():
-            self.master = self.db.create_tb(
+            self.master = self.db.add_tb(
                 "master", "table_name", "CHAR(100)")
             self.master.add_col("last_update", "INT")
             self.master.add_col("first_date", "INT")

@@ -1,6 +1,6 @@
 [submodule "lightdf"]
 	path = lightdf
 	url = https://github.com/nelson9503-pymodules/lightdf.git
-[submodule "mysqlite"]
-	path = mysqlite
-	url = https://github.com/nelson9503-pymodules/mysqlite.git
+[submodule "mysql"]
+	path = mysql
+	url = https://github.com/nelson9503-pymodules/mysql.git

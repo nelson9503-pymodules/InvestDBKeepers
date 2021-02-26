@@ -1,13 +1,13 @@
 from .lightdf import Dataframe
-from . import mysqlite
+from . import mysql
 from datetime import datetime, timedelta
 
 
 class DividendKeeper:
 
     def __init__(self, db_folder_path: str):
-        self.db_path = db_folder_path + "/dividend.db"
-        self.db = mysqlite.DB(self.db_path)
+        self.db_name = "dividend"
+        self.db = mysql.DB(self.db_name)
         self.__setup_master_table()
 
     def query(self, symbol: str):
@@ -98,7 +98,7 @@ class DividendKeeper:
         return df
 
     def __setup_table(self, symbol: str):
-        tb = self.db.create_tb(symbol, "date", "INT")
+        tb = self.db.add_tb(symbol, "date", "INT")
         tb.add_col("dividend", "FLOAT")
         self.master.update({
             symbol: {
@@ -112,7 +112,7 @@ class DividendKeeper:
 
     def __setup_master_table(self):
         if not "master" in self.db.list_tb():
-            self.master = self.db.create_tb(
+            self.master = self.db.add_tb(
                 "master", "table_name", "CHAR(100)")
             self.master.add_col("last_update", "INT")
             self.master.add_col("first_date", "INT")

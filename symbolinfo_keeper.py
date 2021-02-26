@@ -1,11 +1,11 @@
 from .lightdf import Dataframe
-from . import mysqlite
+from . import mysql
 
 class SymbolInfoKeeper:
 
     def __init__(self, db_folder_path: str):
-        self.db_path = db_folder_path + "/symbolinfo.db"
-        self.db = mysqlite.DB(self.db_path)
+        self.db_name = "symbolinfo.db"
+        self.db = mysql.DB(self.db_name)
         self.__setup_table()
 
     def query(self) -> Dataframe:
@@ -20,7 +20,7 @@ class SymbolInfoKeeper:
     
     def __setup_table(self):
         if not "master" in self.db.list_tb():
-            self.master = self.db.create_tb("master", "symbol", "CHAR(100)")
+            self.master = self.db.add_tb("master", "symbol", "CHAR(100)")
             self.master.addCol("short_name", "CHAR(300)")
             self.master.addCol("long_name", "CHAR(500)")
             self.master.addCol("type", "CHAR(20)")
