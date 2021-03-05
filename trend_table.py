@@ -3,9 +3,9 @@ from . import mysql
 from datetime import datetime, timedelta
 
 
-class TrendTableKeeper:
+class TrendTable:
 
-    def __init__(self, db_folder_path: str):
+    def __init__(self):
         self.db_name = "trendtable.db"
         self.db = mysql.DB(self.db_name)
         self.__setup_master_table()
@@ -99,7 +99,7 @@ class TrendTableKeeper:
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("date", int)
         for i in range(3, 378+1, 3):
-            df.add_col("tb"+str(i), float, none_value=False)
+            df.add_col("tb"+str(i), float, is_not_none=True)
         return df
 
     def __get_master_dataframe_temple(self) -> Dataframe:

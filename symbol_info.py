@@ -1,9 +1,10 @@
 from .lightdf import Dataframe
 from . import mysql
 
-class SymbolInfoKeeper:
 
-    def __init__(self, db_folder_path: str):
+class SymbolInfo:
+
+    def __init__(self):
         self.db_name = "symbolinfo.db"
         self.db = mysql.DB(self.db_name)
         self.__setup_table()
@@ -13,11 +14,11 @@ class SymbolInfoKeeper:
         df = self.__get_dataframe_temple()
         df.from_dict(query)
         return df
-    
+
     def update(self, data: dict):
         self.master.update(data)
         self.db.commit()
-    
+
     def __setup_table(self):
         if not "master" in self.db.list_tb():
             self.master = self.db.add_tb("master", "symbol", "CHAR(100)")
@@ -34,7 +35,7 @@ class SymbolInfoKeeper:
         else:
             self.master = self.db.TB("master")
         self.mastertb = self.master.query()
-    
+
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("symbol", str)
         df.add_col("short_name", str)

@@ -1,31 +1,20 @@
 from .lightdf import Dataframe
 from . import mysql
 from datetime import datetime, timedelta
-import random
 
+class Dividend:
 
-class HistoricalPriceKeeper:
-
-    def __init__(self, db_folder_path: str):
-        self.db_name = "historical_price"
+    def __init__(self):
+        self.db_name = "dividend"
         self.db = mysql.DB(self.db_name)
         self.__setup_master_table()
 
-    def query(self, symbol: str, start_timestamp: int = None, end_timestamp: int = None) -> Dataframe:
+    def query(self, symbol: str):
         exist = self.__check_table_exists(symbol)
         if exist == False:
             return exist
         tb = self.db.TB(symbol)
-        condition = ""
-        if not start_timestamp == None:
-            condition += "date >= {}".format(start_timestamp)
-        if not end_timestamp == None:
-            if len(condition) > 0:
-                condition += " AND "
-            condition += "date <= {}".format(end_timestamp)
-        if len(condition) > 0:
-            condition = "WHERE " + condition
-        query = tb.query("*", condition)
+        query = tb.query()
         df = self.__get_dataframe_temple()
         df.from_dict(query)
         return df
@@ -43,14 +32,9 @@ class HistoricalPriceKeeper:
             self.__setup_table(symbol)
         # get table object
         tb = self.db.TB(symbol)
-        # random check
-        random_check = self.__check_adjclose_change_randomly(symbol, data)
-        if random_check == False:
-            tb.drop()
-            self.__setup_table(symbol)
         # update data
         update_df = self.__get_dataframe_temple()
-        last_date = self.mastertb[symbol]["last_date"] - (86400 * 20)
+        last_date = self.mastertb[symbol]["last_date"]
         for date in data:
             if date < last_date:  # skip for row has been updated
                 continue
@@ -101,12 +85,7 @@ class HistoricalPriceKeeper:
 
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("date", int)
-        df.add_col("open", float, none_value=False)
-        df.add_col("high", float, none_value=False)
-        df.add_col("low", float, none_value=False)
-        df.add_col("close", float, none_value=False)
-        df.add_col("adjclose", float, none_value=False)
-        df.add_col("volume", int)
+        df.add_col("dividend", float, is_not_none=True)
         return df
 
     def __get_master_dataframe_temple(self) -> Dataframe:
@@ -119,12 +98,7 @@ class HistoricalPriceKeeper:
 
     def __setup_table(self, symbol: str):
         tb = self.db.add_tb(symbol, "date", "INT")
-        tb.add_col("open", "FLOAT")
-        tb.add_col("high", "FLOAT")
-        tb.add_col("low", "FLOAT")
-        tb.add_col("close", "FLOAT")
-        tb.add_col("adjclose", "FLOAT")
-        tb.add_col("volume", "BIGINT")
+        tb.add_col("dividend", "FLOAT")
         self.master.update({
             symbol: {
                 "last_update": 0,
@@ -152,23 +126,5 @@ class HistoricalPriceKeeper:
             # duoble check
             self.mastertb = self.master.query()
             if not symbol in self.mastertb:
-                return False
-        return True
-
-    def __check_adjclose_change_randomly(self, symbol: str, data: dict):
-        dates = list(data.keys())
-        # choose 20 dates for checking randomly
-        random.shuffle(dates)
-        if len(dates) >= 20:
-            samples = dates[:20]
-        else:
-            samples = dates
-        # comparing data and database
-        tb = self.db.TB(symbol)
-        for date in samples:
-            query = tb.query("*", "WHERE date == {}".format(date))
-            if len(query) == 0:  # skip if no record
-                continue
-            if not round(query[date]["adjclose"], 4) == round(data[date]["adjclose"], 4):
                 return False
         return True

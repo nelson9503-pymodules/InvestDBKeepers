@@ -2,11 +2,10 @@ from .lightdf import Dataframe
 from . import mysql
 from datetime import datetime, timedelta
 
+class StockSplit:
 
-class DividendKeeper:
-
-    def __init__(self, db_folder_path: str):
-        self.db_name = "dividend"
+    def __init__(self):
+        self.db_name = "stocksplit.db"
         self.db = mysql.DB(self.db_name)
         self.__setup_master_table()
 
@@ -41,7 +40,9 @@ class DividendKeeper:
                 continue
             try:
                 process_date = self.__process_timestamp(date)
-                update_df.from_dict({process_date: data[date]})
+                x = data[date]["stocksplit"].split(":")
+                update_df.from_dict(
+                    {process_date: {"price_multiple_factor": x[1], "price_divide_factor": x[0]}})
             except ValueError:  # skip for none values
                 pass
         # update database
@@ -86,7 +87,8 @@ class DividendKeeper:
 
     def __get_dataframe_temple(self) -> Dataframe:
         df = Dataframe("date", int)
-        df.add_col("dividend", float, none_value=False)
+        df.add_col("price_multiple_factor", int)
+        df.add_col("price_divide_factor", int)
         return df
 
     def __get_master_dataframe_temple(self) -> Dataframe:
@@ -99,7 +101,8 @@ class DividendKeeper:
 
     def __setup_table(self, symbol: str):
         tb = self.db.add_tb(symbol, "date", "INT")
-        tb.add_col("dividend", "FLOAT")
+        tb.add_col("price_multiple_factor", "INT")
+        tb.add_col("price_divide_factor", "INT")
         self.master.update({
             symbol: {
                 "last_update": 0,
